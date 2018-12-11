@@ -1,56 +1,53 @@
 package com.lazan.javaflavours
 
+import org.gradle.testkit.runner.GradleRunner
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
+import spock.lang.Specification
+
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-import org.gradle.api.Project;
-import org.gradle.testkit.runner.BuildResult
-import org.gradle.testkit.runner.GradleRunner
-import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
-import java.util.regex.*
-import static org.junit.Assert.*
-
-
-import spock.lang.Specification
+import static org.junit.Assert.assertEquals
 
 class JavaFlavoursPluginTest extends Specification {
 
-	@Rule final TemporaryFolder testProjectDir = new TemporaryFolder()
-	
-	def setup() {
-		writeFile('gradle.properties', getResourceUrl("testkit-gradle.properties").text)
-	}
+    @Rule
+    final TemporaryFolder testProjectDir = new TemporaryFolder()
 
-	URL getResourceUrl(String path) {
-		URL url = getClass().classLoader.getResource(path)
-		if (url == null) throw new RuntimeException("No such resource $path")
-		return url
-	}
-	
-	void writeFile(String path, String text) {
-		File file = new File(testProjectDir.root, path)
-		file.parentFile.mkdirs()
-		file.text = text
-	}
-	
-	void assertZipEntries(String zipPath, List<String> expectedEntries) {
-		File zipFile = new File(testProjectDir.root, zipPath)
-		ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFile))
-		Set<String> actualEntries = [] as Set
-		ZipEntry entry
-		while ((entry = zipIn.getNextEntry()) != null) {
-			if (!entry.isDirectory()) {
-				actualEntries << entry.name
-			}
-		}
-		assertEquals(expectedEntries as Set, actualEntries)
-	}
-	
-	def "Test tasks"() {
-		given:
-			writeFile("build.gradle", """
+    def setup() {
+        writeFile('gradle.properties', getResourceUrl("testkit-gradle.properties").text)
+    }
+
+    URL getResourceUrl(String path) {
+        URL url = getClass().classLoader.getResource(path)
+        if (url == null) throw new RuntimeException("No such resource $path")
+        return url
+    }
+
+    void writeFile(String path, String text) {
+        File file = new File(testProjectDir.root, path)
+        file.parentFile.mkdirs()
+        file.text = text
+    }
+
+    void assertZipEntries(String zipPath, List<String> expectedEntries) {
+        File zipFile = new File(testProjectDir.root, zipPath)
+        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFile))
+        Set<String> actualEntries = [] as Set
+        ZipEntry entry
+        while ((entry = zipIn.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+                actualEntries << entry.name
+            }
+        }
+        assertEquals(expectedEntries as Set, actualEntries)
+    }
+
+    def "Test tasks"() {
+        given:
+        writeFile("build.gradle", """
 				plugins {
 					id 'com.lazan.javaflavours'
 				}
@@ -75,19 +72,19 @@ class JavaFlavoursPluginTest extends Specification {
 					}
 				}
 			""")
-		when:
-			def result = GradleRunner.create()
-				.withProjectDir(testProjectDir.root)
-				.withArguments('performAssertions', '--stacktrace')
-				.withPluginClasspath()
-				.build()
-		then:
-			result.task(":performAssertions").outcome == TaskOutcome.SUCCESS
-	}
-	
-	def "Test configurations"() {
-		given:
-			writeFile("build.gradle", """
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withArguments('performAssertions', '--stacktrace')
+                .withPluginClasspath()
+                .build()
+        then:
+        result.task(":performAssertions").outcome == TaskOutcome.SUCCESS
+    }
+
+    def "Test configurations"() {
+        given:
+        writeFile("build.gradle", """
 				plugins {
 					id 'com.lazan.javaflavours'
 				}
@@ -128,21 +125,21 @@ class JavaFlavoursPluginTest extends Specification {
 					}
 				}
 			""")
-		when:
-			def result = GradleRunner.create()
-				.withProjectDir(testProjectDir.root)
-				.withArguments('performAssertions', '--stacktrace')
-				.withPluginClasspath()
-				.build()
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withArguments('performAssertions', '--stacktrace')
+                .withPluginClasspath()
+                .build()
 
-		then:
-			result.task(":performAssertions").outcome == TaskOutcome.SUCCESS
-	}
-	
-	def "Test two flavours compile, test and jar"() {
-		given:
-		writeFile("settings.gradle", "rootProject.name = 'test-project'")
-		writeFile("build.gradle", """
+        then:
+        result.task(":performAssertions").outcome == TaskOutcome.SUCCESS
+    }
+
+    def "Test two flavours compile, test and jar"() {
+        given:
+        writeFile("settings.gradle", "rootProject.name = 'test-project'")
+        writeFile("build.gradle", """
 			plugins {
 				id 'com.lazan.javaflavours'
 			}
@@ -161,15 +158,15 @@ class JavaFlavoursPluginTest extends Specification {
 			    testLogging.showStandardStreams = true
 			}
 		""")
-		['main', 'red', 'blue'].each { String flavour ->
-			writeFile("src/$flavour/resources/${flavour}.txt", flavour)
-			writeFile("src/$flavour/java/foo/${flavour.capitalize()}.java", """
+        ['main', 'red', 'blue'].each { String flavour ->
+            writeFile("src/$flavour/resources/${flavour}.txt", flavour)
+            writeFile("src/$flavour/java/foo/${flavour.capitalize()}.java", """
 				package foo;
 				public interface ${flavour.capitalize()} {}
 			""")
-			String testDir = 'main' == flavour ? 'test' : "${flavour}Test"
-			writeFile("src/$testDir/resources/${flavour}Test.txt", flavour)
-			writeFile("src/$testDir/java/foo/${flavour.capitalize()}Test.java", """
+            String testDir = 'main' == flavour ? 'test' : "${flavour}Test"
+            writeFile("src/$testDir/resources/${flavour}Test.txt", flavour)
+            writeFile("src/$testDir/java/foo/${flavour.capitalize()}Test.java", """
 				package foo;
 				import java.util.*;
 				import org.junit.*;
@@ -195,23 +192,23 @@ class JavaFlavoursPluginTest extends Specification {
 					}
 				}
 			""")
-		}
-		when:
-		def result = GradleRunner.create()
-			.withProjectDir(testProjectDir.root)
-			.withArguments('build', '--stacktrace')
-			.withPluginClasspath()
-			.build()
+        }
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withArguments('build', '--stacktrace')
+                .withPluginClasspath()
+                .build()
 
-		then:
-		result.task(":build").outcome == TaskOutcome.SUCCESS
-		
-		result.output.contains('class=foo.MainTest, found=[foo/Main.class, main.txt, foo/MainTest.class, mainTest.txt], notFound=[foo/Red.class, red.txt, foo/RedTest.class, redTest.txt, foo/Blue.class, blue.txt, foo/BlueTest.class, blueTest.txt]')
-		result.output.contains('class=foo.RedTest, found=[foo/Main.class, main.txt, foo/MainTest.class, mainTest.txt, foo/Red.class, red.txt, foo/RedTest.class, redTest.txt], notFound=[foo/Blue.class, blue.txt, foo/BlueTest.class, blueTest.txt]')
-		result.output.contains('class=foo.BlueTest, found=[foo/Main.class, main.txt, foo/MainTest.class, mainTest.txt, foo/Blue.class, blue.txt, foo/BlueTest.class, blueTest.txt], notFound=[foo/Red.class, red.txt, foo/RedTest.class, redTest.txt]')
-		
-		assertZipEntries("build/libs/test-project-1.0-SNAPSHOT.jar", ['META-INF/MANIFEST.MF', 'foo/Main.class', 'main.txt'])
-		assertZipEntries("build/libs/test-project-1.0-SNAPSHOT-red.jar", ['META-INF/MANIFEST.MF', 'foo/Main.class', 'main.txt', 'foo/Red.class', 'red.txt'])
-		assertZipEntries("build/libs/test-project-1.0-SNAPSHOT-blue.jar", ['META-INF/MANIFEST.MF', 'foo/Main.class', 'main.txt', 'foo/Blue.class', 'blue.txt'])
-	}
+        then:
+        result.task(":build").outcome == TaskOutcome.SUCCESS
+
+        result.output.contains('class=foo.MainTest, found=[foo/Main.class, main.txt, foo/MainTest.class, mainTest.txt], notFound=[foo/Red.class, red.txt, foo/RedTest.class, redTest.txt, foo/Blue.class, blue.txt, foo/BlueTest.class, blueTest.txt]')
+        result.output.contains('class=foo.RedTest, found=[foo/Main.class, main.txt, foo/MainTest.class, mainTest.txt, foo/Red.class, red.txt, foo/RedTest.class, redTest.txt], notFound=[foo/Blue.class, blue.txt, foo/BlueTest.class, blueTest.txt]')
+        result.output.contains('class=foo.BlueTest, found=[foo/Main.class, main.txt, foo/MainTest.class, mainTest.txt, foo/Blue.class, blue.txt, foo/BlueTest.class, blueTest.txt], notFound=[foo/Red.class, red.txt, foo/RedTest.class, redTest.txt]')
+
+        assertZipEntries("build/libs/test-project-1.0-SNAPSHOT.jar", ['META-INF/MANIFEST.MF', 'foo/Main.class', 'main.txt'])
+        assertZipEntries("build/libs/test-project-1.0-SNAPSHOT-red.jar", ['META-INF/MANIFEST.MF', 'foo/Main.class', 'main.txt', 'foo/Red.class', 'red.txt'])
+        assertZipEntries("build/libs/test-project-1.0-SNAPSHOT-blue.jar", ['META-INF/MANIFEST.MF', 'foo/Main.class', 'main.txt', 'foo/Blue.class', 'blue.txt'])
+    }
 }
