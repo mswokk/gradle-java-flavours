@@ -10,6 +10,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.Test
 
 class JavaFlavoursExtension {
+    private final List<String> flavours = []
     private final Project project
     FlavourPathResolver javaPathResolver = { String flavour -> "src/$flavour/java" }
     FlavourPathResolver resourcesPathResolver = { String flavour -> "src/$flavour/resources" }
@@ -20,7 +21,13 @@ class JavaFlavoursExtension {
         this.project = project
     }
 
+    List<String> getFlavours() {
+        return Collections.unmodifiableList(flavours)
+    }
+
     void flavour(String flavour) {
+        flavours << flavour
+
         project.with {
             SourceSet sourceSet = sourceSets.create(flavour)
             sourceSet.compileClasspath += sourceSets.main.output
