@@ -48,7 +48,7 @@ class JavaFlavoursExtension {
             Task testTask = tasks.create(name: "${flavour}Test", type: Test) {
                 group = JavaBasePlugin.VERIFICATION_GROUP
                 description = "Runs the tests for ${flavour}."
-                testClassesDir = testSourceSet.output.classesDir
+                testClassesDirs = testSourceSet.output.classesDirs
                 classpath = testSourceSet.runtimeClasspath
             }
             check.dependsOn testTask
